@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "command": "dotnet",
+        "type": "process",
+        "args": [    
+
+          "build",
+          "${workspaceFolder}/DialogueTesterMod.csproj",
+          "/property:GenerateFullPaths=true",
+          "/consoleloggerparameters:NoSumotnmary"
+        ],
+        "problemMatcher": "$msCompile"
+      },
+      {
+        "label": "build Release",
+        "command": "dotnet",
+        "type": "process",
+        "args": [
+            "build",
+            "${workspaceFolder}/DialogueTesterMod.csproj",
+            "-c",
+            "Release"
+        ],
+        "problemMatcher": "$msCompile",
+        "group": {
+          "kind": "build",
+          "isDefault": true           
+        }
+    }
+    ]
+  }
