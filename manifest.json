@@ -13,7 +13,7 @@
   "Description": "This mod will let you test your mod's dialogue in-game without needing to worry about finding the NPC, etc.",
   "MinimumApiVersion": "4.1",
   "MinimumGameVersion": "1.6.15",
-  "EntryDll": "Stardew-DialogueTesterMod.dll",
+  "EntryDll": "DialogueTesterMod.dll",
   "UpdateKeys": [
     "GitHub:thecosmicslug/Stardew-DialogueTesterMod"
   ]
