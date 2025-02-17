@@ -7,7 +7,7 @@
    */
   "$schema": "https://smapi.io/schemas/manifest.json",
   "UniqueID": "TheCosmicSlug.DialogueTesterMod",
-  "Name": "Stardew-DialogueTesterMod",
+  "Name": "DialogueTesterMod",
   "Author": "TheCosmicSlug",
   "Version": "1.0.3",
   "Description": "This mod will let you test your mod's dialogue in-game without needing to worry about finding the NPC, etc.",

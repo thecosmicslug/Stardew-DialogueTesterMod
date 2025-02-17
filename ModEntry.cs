@@ -5,6 +5,7 @@ using System;
 using StardewValley;
 using StardewValley.Menus;
 using StardewModdingAPI;
+using StardewModdingAPI.Events;
 using HarmonyLib;
 
 namespace DialogueTester
@@ -31,13 +32,16 @@ namespace DialogueTester
         //* Settings
         private ModConfig config;
 
+        //* Entry-Point
         public override void Entry(IModHelper helper) {
 
             //* Load configuration
             try{
                 this.config = this.Helper.ReadConfig<ModConfig>();
+                monitor.Log("Configuration loaded.", LogLevel.Info);
             }
             catch{
+                monitor.Log("No config found, using defaults.", LogLevel.Info);
                 this.config = new ModConfig();
             }
 
@@ -45,26 +49,88 @@ namespace DialogueTester
             monitor = Monitor;
             helper.ConsoleCommands.Add(_commandName, $"{_commandDescription}\n\n{_commandUsage}", this.TestDialogue);
 
-            //TODO: Add GMCM Support?
-
-            //TODO: Move Harmony Patching so we can enable/disable dynamically
+            //* Setup Harmony
             if (config.EnableHarmony){
-                //* Setup Harmony
-                monitor.Log("Setting up harmony postfix...", LogLevel.Info);
-                Harmony harmony = new(ModManifest.UniqueID);
-                
-                //* Patch DialogBox to find the translation keys used.
-                harmony.Patch(
-                    original: AccessTools.Constructor(typeof(DialogueBox), new Type[] { typeof(Dialogue) }),
-                    postfix: new HarmonyMethod(typeof(ModEntry), nameof(Dialogue_Postfix))
-                );
+                PatchHarmony();
             }
 
-
+            //* Setup Event Hooks
+            helper.Events.GameLoop.GameLaunched += onLaunched;
             monitor.Log("Setup is complete.", LogLevel.Info);
 
         }
+        
+        //* Setup for GenericModConfigMenu support.
+        private void onLaunched(object sender, GameLaunchedEventArgs e)
+        {
+            //* Hook into GMCM
+            var api = this.Helper.ModRegistry.GetApi<GenericModConfigMenuAPI>("spacechase0.GenericModConfigMenu");
+            if (api != null){
+                //* Register with GMCM
+                api.Register(this.ModManifest, () => this.config = new ModConfig(), () => Helper.WriteConfig(this.config));
+                    
+                //* Our Options
+                api.AddSectionTitle(this.ModManifest,() => "Harmony Settings", () => "" );
+                api.AddParagraph(this.ModManifest,() => "DialogueTester can display the keys used when NPCs talk in-game if we use a Harmony postfix.");
 
+                api.AddBoolOption(this.ModManifest,() => this.config.EnableHarmony, (bool val) => this.config.EnableHarmony = val, ()  => "Enable Harmony support.", () => "Will log dialogue keys to the console when used.","EnableHarmony");
+                api.AddBoolOption(this.ModManifest,() => this.config.IgnoreSelf, (bool val) => this.config.IgnoreSelf = val, ()  => "Ignore Dialogue Requested.", () => "Don't bother logging dialogue we have asked for.","IgnoreSelf");
+
+                //* Detect changes mid-game.
+                api.OnFieldChanged(this.ModManifest,onFieldChanged);
+                monitor.Log("GenericModConfigMenu setup complete.", LogLevel.Info);
+            }
+
+        }
+
+        //* The method invoked when we detect configuration changes.
+        private void onFieldChanged(string str, object obj)
+        {
+            //* Harmony support
+            if (str == "EnableHarmony"){
+                if((bool)obj){
+                    config.EnableHarmony = true;
+                }else{
+                    config.EnableHarmony = false;
+                }
+                if (config.EnableHarmony){
+                    PatchHarmony();
+                }else{
+                    DisableHarmony();
+                }
+            }
+            //* Ignore self
+            else if(str == "IgnoreSelf"){
+                if((bool)obj){
+                    config.IgnoreSelf= true;
+                }else{
+                    config.IgnoreSelf = false;
+                }
+            }
+        }
+
+        //* Enable Harmony Patching
+        private void PatchHarmony(){
+            
+            //* Setup Harmony
+            monitor.Log("Setting up harmony postfix...", LogLevel.Info);
+            Harmony harmony = new Harmony(ModManifest.UniqueID);
+
+            //* Patch DialogBox to find the translation keys used.
+            harmony.Patch(
+                original: AccessTools.Constructor(typeof(DialogueBox), new Type[] { typeof(Dialogue) }),
+                postfix: new HarmonyMethod(typeof(ModEntry), nameof(Dialogue_Postfix))
+            );
+
+        }
+
+        //* Remove Harmony Patching
+        private void DisableHarmony(){
+
+            monitor.Log("removing harmony postfix...", LogLevel.Info);
+            Harmony harmony = new Harmony(ModManifest.UniqueID);
+            harmony.UnpatchAll(harmony.Id);
+        }
         //* Harmony Postfix to print out dialogue sources.
         public static void Dialogue_Postfix(DialogueBox __instance, ref Dialogue dialogue) {   
 

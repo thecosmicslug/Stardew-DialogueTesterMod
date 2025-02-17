@@ -3,7 +3,7 @@
         <AssemblyName>DialogueTesterMod</AssemblyName>
         <BaseManifest>new</BaseManifest>
         <UniqueId>TheCosmicSlug.DialogueTesterMod</UniqueId>
-        <Name>Stardew-DialogueTesterMod</Name>
+        <Name>DialogueTesterMod</Name>
         <Authors>TheCosmicSlug</Authors>
         <Description>This mod will let you test your mod's dialogue in-game without needing to worry about finding the NPC, etc.</Description>
         <Version>1.0.3</Version>
