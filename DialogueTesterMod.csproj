@@ -6,11 +6,12 @@
         <Name>Stardew-DialogueTesterMod</Name>
         <Authors>TheCosmicSlug</Authors>
         <Description>This mod will let you test your mod's dialogue in-game without needing to worry about finding the NPC, etc.</Description>
-        <Version>1.0.2</Version>
+        <Version>1.0.3</Version>
         <UpdateKeys>GitHub:thecosmicslug/Stardew-DialogueTesterMod</UpdateKeys>
         <MinimumApiVersion>auto</MinimumApiVersion>
         <MinimumGameVersion>auto</MinimumGameVersion>
         <Version_AppendConfiguration>false</Version_AppendConfiguration>
+        <EnableHarmony>true</EnableHarmony>
     </PropertyGroup>
     <PropertyGroup>
         <CheckEolTargetFramework>false</CheckEolTargetFramework>

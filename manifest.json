@@ -9,7 +9,7 @@
   "UniqueID": "TheCosmicSlug.DialogueTesterMod",
   "Name": "Stardew-DialogueTesterMod",
   "Author": "TheCosmicSlug",
-  "Version": "0.0.2",
+  "Version": "1.0.3",
   "Description": "This mod will let you test your mod's dialogue in-game without needing to worry about finding the NPC, etc.",
   "MinimumApiVersion": "4.1",
   "MinimumGameVersion": "1.6.15",

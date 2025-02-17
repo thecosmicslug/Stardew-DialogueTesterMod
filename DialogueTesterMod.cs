@@ -2,40 +2,91 @@
 // Taken from https://github.com/AlanDavison/StardewValleyMods/
 
 using System;
-using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Menus;
+using StardewModdingAPI;
+using HarmonyLib;
 
 namespace DialogueTester
 {
-    public class ModEntry : Mod{
+    public class ModEntry : Mod {
 
-        private static readonly string _commandName = "dh_testdialogue";
-        private static readonly string _commandDescription = "Test some modded dialogue.";
+        //* Strings
+        //TODO: Add translation support.
+        private static readonly string _commandName = "dialogue_tester";
+        private static readonly string _commandDescription = "Test some dialogue while modding, show which translation key is used ingame.";
+        private static readonly string _InvalidDialogue = "Invalid dialogue ID. Maybe this character doesn't have this dialogue?";
+        private static readonly string _InvalidArguments = "Invalid number of arguments.";
+        private static readonly string _InvalidNPC = "Invalid NPC name.";
 
         private static readonly string _commandUsage = $"\nUsage: \t\t\t{_commandName} <Dialogue ID> <NPC name>\n" +
-        $"Advanced usage: \t{_commandName} <Full dialogue path> <NPC name> -manual\n\n" +
+        $"Advanced usage: \t{_commandName} <Full dialogue path> <NPC name> -manual\n" +
         $"Regular example: \t{_commandName} summer_Wed2 Abigail\n" +
-        $"Advanced example: \t{_commandName} Characters\\Dialogue\\Abigail:summer_Wed2 Abigail -manual";
+        $"Advanced example: \t{_commandName} Characters\\Dialogue\\Abigail:summer_Wed2 Abigail -manual\n";
 
-        public override void Entry(IModHelper helper){
+        //* Logging
+        private static IMonitor monitor;
+        private static bool bIgnore = false;
+
+        public override void Entry(IModHelper helper) {
 
             //* Add our debug command
+            monitor = Monitor;
             helper.ConsoleCommands.Add(_commandName, $"{_commandDescription}\n\n{_commandUsage}", this.TestDialogue);
+
+            //TODO: Add GMCM Support?
+
+            //* Setup Harmony
+            Harmony harmony = new(ModManifest.UniqueID);
+            
+            //* Patch DialogBox to find the translation keys used.
+            harmony.Patch(
+                original: AccessTools.Constructor(typeof(DialogueBox), new Type[] { typeof(Dialogue) }),
+                postfix: new HarmonyMethod(typeof(ModEntry), nameof(Dialogue_Postfix))
+            );
+
+            monitor.Log("Setup is complete.", LogLevel.Info);
+
         }
 
-        private void PrintUsage(string error){
+        //* Harmony Postfix to print out dialogue sources.
+        public static void Dialogue_Postfix(DialogueBox __instance, ref Dialogue dialogue) {   
+
+            try {
+
+                if(bIgnore){
+                    //* Skip own commands, re-enable for next dialogue.
+                    bIgnore = false;
+                    return;
+                }
+
+                //* Log NPC
+                monitor.Log($"NPC: {dialogue.speaker.Name}", LogLevel.Warn);
+                //* There isn't always a key.
+                if (dialogue.TranslationKey is not null){
+                    monitor.Log($"Key: {dialogue.TranslationKey}", LogLevel.Warn);
+                }
+                //* Log dialogue.
+                //TODO: Loop all dialogues?
+                monitor.Log($"Dialogue: {dialogue.dialogues[dialogue.currentDialogueIndex].Text}", LogLevel.Warn);
+            }
+            //* ERROR!
+            catch (Exception e) {
+                monitor.Log($"Failed in {nameof(Dialogue_Postfix)}:\n{e}", LogLevel.Error);
+            }
+        }
+
+        private void PrintUsage(string error) {
 
             //* Output to Debug Console
-            this.Monitor.Log(error, LogLevel.Warn);
-            this.Monitor.Log(_commandUsage, LogLevel.Warn);
+            monitor.Log(error, LogLevel.Error);
+            monitor.Log(_commandUsage, LogLevel.Info);
         }
 
-        private void TestDialogue(string command, string[] args){
+        private void TestDialogue(string command, string[] args) {
 
             //* We only want to do this if we're actually in-game. May not be necessary.
             if (!Context.IsWorldReady){
-
-                this.Monitor.Log("You should only use this command once the game has loaded.", LogLevel.Info);
                 return;
             }
 
@@ -43,19 +94,17 @@ namespace DialogueTester
             bool manualDialogueKey = false;
 
             //* If we don't have the required amount of parameters, we quit.
-            // TODO: Add default NPC case if one is missing.
             if (args.Length < 2 || args.Length > 3){
-
-                this.PrintUsage("Invalid number of arguments.");
+                this.PrintUsage(_InvalidArguments);
                 return;
             }
 
             //* If our third argument is the -manual option, we set a bool to tell us to use the passed dialogue key verbatim.
             if (args.Length == 3) manualDialogueKey = args[2].Equals("-manual");
 
-            //* Parameter 0 = Dialogue ID or full key
-            //* Parameter 1 = NPC name
-            //* Parameter 2 = Manual option
+            // Parameter 0 = Dialogue ID or full key
+            // Parameter 1 = NPC name
+            // Parameter 2 = Manual option
             dialogueIdOrKey = args[0];
             npcName = args[1];
 
@@ -63,15 +112,14 @@ namespace DialogueTester
             string finalDialogue;
 
             if (speakingNpc == null){
-
                 //* If the NPC doesn't exist, warn as appropriate and return.
-                this.PrintUsage("Invalid NPC name.");
+                this.PrintUsage(_InvalidNPC);
                 return;
             }
 
             if (manualDialogueKey){
-
-                try // TODO: Make this not terrible. Works for now, though!
+            //* Manual Key supplied
+                try
                 {
                     finalDialogue = Game1.content.LoadStringReturnNullIfNotFound(dialogueIdOrKey);
                 }
@@ -79,13 +127,13 @@ namespace DialogueTester
                 {
                     finalDialogue = null;
                 }
-
                 if (finalDialogue == null){
-                    this.PrintUsage("Invalid dialogue ID. Maybe this character doesn't have this dialogue?");
+                    //* FAIL NOT FOUND
+                    this.PrintUsage(_InvalidDialogue);
                     return;
                 }
             }else{
-
+            //* Lookup Dialogue from NPC:Key
                 try
                 {
                     finalDialogue = Game1.content.LoadStringReturnNullIfNotFound($"Characters\\Dialogue\\{npcName}:{dialogueIdOrKey}");
@@ -94,13 +142,17 @@ namespace DialogueTester
                 {
                     finalDialogue = null;
                 }
-
                 if (finalDialogue == null){
-                    this.PrintUsage("Invalid dialogue ID. Maybe this character doesn't have this dialogue?");
+                    //* FAIL NOT FOUND
+                    this.PrintUsage(_InvalidDialogue);
                     return;
                 }
             }
+            //* SUCCESS!
+            //* Tell Harmony Postfix to ignore us.
+            bIgnore = true;
 
+            //* Display Dialogue now!
             Game1.DrawDialogue(new Dialogue(speakingNpc, null, finalDialogue));
         }
     }
