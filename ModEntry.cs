@@ -28,7 +28,18 @@ namespace DialogueTester
         private static IMonitor monitor;
         private static bool bIgnore = false;
 
+        //* Settings
+        private ModConfig config;
+
         public override void Entry(IModHelper helper) {
+
+            //* Load configuration
+            try{
+                this.config = this.Helper.ReadConfig<ModConfig>();
+            }
+            catch{
+                this.config = new ModConfig();
+            }
 
             //* Add our debug command
             monitor = Monitor;
@@ -36,14 +47,19 @@ namespace DialogueTester
 
             //TODO: Add GMCM Support?
 
-            //* Setup Harmony
-            Harmony harmony = new(ModManifest.UniqueID);
-            
-            //* Patch DialogBox to find the translation keys used.
-            harmony.Patch(
-                original: AccessTools.Constructor(typeof(DialogueBox), new Type[] { typeof(Dialogue) }),
-                postfix: new HarmonyMethod(typeof(ModEntry), nameof(Dialogue_Postfix))
-            );
+            //TODO: Move Harmony Patching so we can enable/disable dynamically
+            if (config.EnableHarmony){
+                //* Setup Harmony
+                monitor.Log("Setting up harmony postfix...", LogLevel.Info);
+                Harmony harmony = new(ModManifest.UniqueID);
+                
+                //* Patch DialogBox to find the translation keys used.
+                harmony.Patch(
+                    original: AccessTools.Constructor(typeof(DialogueBox), new Type[] { typeof(Dialogue) }),
+                    postfix: new HarmonyMethod(typeof(ModEntry), nameof(Dialogue_Postfix))
+                );
+            }
+
 
             monitor.Log("Setup is complete.", LogLevel.Info);
 
@@ -149,8 +165,10 @@ namespace DialogueTester
                 }
             }
             //* SUCCESS!
-            //* Tell Harmony Postfix to ignore us.
-            bIgnore = true;
+            if (config.IgnoreSelf){
+                //* Tell Harmony Postfix to ignore us.
+                bIgnore = true;
+            }
 
             //* Display Dialogue now!
             Game1.DrawDialogue(new Dialogue(speakingNpc, null, finalDialogue));
