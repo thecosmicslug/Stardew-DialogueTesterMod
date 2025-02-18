@@ -1,3 +1,27 @@
 {
-    "Nothing": "Here"
+    //* Configuration
+    "Config_EnableHarmony": "Enable Harmony support.",
+    "Config_HarmonySettingTitle": "Harmony Settings:",
+    "Config_HarmonyDescription": "DialogueTester can display the keys used when NPCs talk in-game if we use a Harmony postfix.",
+    "Config_IgnoreSelfSetting": "Ignore Dialogue we request.",
+    "Config_IgnoreSelfDescription": "Don't bother logging dialogue we have asked for.",
+    //* Command
+    "DialogueTester_commandName": "dialogue_tester",
+    "DialogueTester_commandHelp": "dialogue_tester_help",
+    "DialogueTester_commandDescription": "Test some dialogue while modding, show which translation key is used ingame.\n\n",
+    "DialogueTester_UsageDescription": "Show examples of how to use DialogueTester.",
+    "DialogueTester_commandUsage": "\nUsage: \t\t\t{{_commandName}} <Dialogue ID> <NPC name>\n",
+    "DialogueTester_commandUsageAdv": "Advanced usage: \t{{_commandName}} <Full dialogue path> <NPC name> -manual\n\n",
+    "DialogueTester_commandExample": "Regular example: \t{{_commandName}} summer_Wed2 Abigail\n",
+    "DialogueTester_commandExampleAdv": "Advanced example: \t{{_commandName}} Characters\\Dialogue\\Abigail:summer_Wed2 Abigail -manual\n",
+    //* Others
+    "DialogueTester_NoConfig": "No config found, using defaults.",
+    "DialogueTester_LoadedConfig": "Configuration loaded.",
+    "DialogueTester_GMCMSetup":  "GenericModConfigMenu setup complete.",
+    "DialogueTester_SetupHarmony": "Setting up Harmony postfix...",
+    "DialogueTester_ShutdownHarmony": "Removing harmony postfix...",
+    "DialogueTester_InvalidDialogue": "Invalid dialogue ID. Maybe this character doesn't have this dialogue?",
+    "DialogueTester_InvalidArguments": "Invalid number of arguments.",
+    "DialogueTester_InvalidNPC": "Invalid NPC name.",
+    "DialogueTester_PostfixError": "Failed in"
 }
