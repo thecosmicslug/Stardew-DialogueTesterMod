@@ -7,6 +7,7 @@ using StardewValley.Menus;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using HarmonyLib;
+using System.Threading;
 
 namespace DialogueTester
 {
@@ -14,14 +15,16 @@ namespace DialogueTester
 
         //* Strings
         //TODO: Add translation support.
+        //use like = i18n.GetTranslation("Config.CarolineSprite");
         private static readonly string _commandName = "dialogue_tester";
+        private static readonly string _commandHelp = "dialogue_tester_help";
         private static readonly string _commandDescription = "Test some dialogue while modding, show which translation key is used ingame.";
         private static readonly string _InvalidDialogue = "Invalid dialogue ID. Maybe this character doesn't have this dialogue?";
         private static readonly string _InvalidArguments = "Invalid number of arguments.";
         private static readonly string _InvalidNPC = "Invalid NPC name.";
 
         private static readonly string _commandUsage = $"\nUsage: \t\t\t{_commandName} <Dialogue ID> <NPC name>\n" +
-        $"Advanced usage: \t{_commandName} <Full dialogue path> <NPC name> -manual\n" +
+        $"Advanced usage: \t{_commandName} <Full dialogue path> <NPC name> -manual\n\n" +
         $"Regular example: \t{_commandName} summer_Wed2 Abigail\n" +
         $"Advanced example: \t{_commandName} Characters\\Dialogue\\Abigail:summer_Wed2 Abigail -manual\n";
 
@@ -35,19 +38,24 @@ namespace DialogueTester
         //* Entry-Point
         public override void Entry(IModHelper helper) {
 
-            //* Load configuration
             try{
+                //* Load configuration
                 this.config = this.Helper.ReadConfig<ModConfig>();
-                monitor.Log("Configuration loaded.", LogLevel.Info);
+                Monitor.Log("Configuration loaded.", LogLevel.Info);
             }
             catch{
-                monitor.Log("No config found, using defaults.", LogLevel.Info);
+                //* Create configuration
+                Monitor.Log("No config found, using defaults.", LogLevel.Info);
                 this.config = new ModConfig();
             }
+            
+            //* Setup Logging, Translation Support.
+            monitor = Monitor;
+            i18n.gethelpers(this.Helper.Translation, this.config);
 
             //* Add our debug command
-            monitor = Monitor;
             helper.ConsoleCommands.Add(_commandName, $"{_commandDescription}\n\n{_commandUsage}", this.TestDialogue);
+            helper.ConsoleCommands.Add(_commandHelp, "Show Help", this.PrintUsage);
 
             //* Setup Harmony
             if (config.EnableHarmony){
@@ -56,8 +64,7 @@ namespace DialogueTester
 
             //* Setup Event Hooks
             helper.Events.GameLoop.GameLaunched += onLaunched;
-            monitor.Log("Setup is complete.", LogLevel.Info);
-
+            Monitor.Log("Setup is complete.", LogLevel.Info);
         }
         
         //* Setup for GenericModConfigMenu support.
@@ -70,9 +77,7 @@ namespace DialogueTester
                 api.Register(this.ModManifest, () => this.config = new ModConfig(), () => Helper.WriteConfig(this.config));
                     
                 //* Our Options
-                api.AddSectionTitle(this.ModManifest,() => "Harmony Settings", () => "" );
-                api.AddParagraph(this.ModManifest,() => "DialogueTester can display the keys used when NPCs talk in-game if we use a Harmony postfix.");
-
+                api.AddSectionTitle(this.ModManifest,() => "Harmony Settings", () => "DialogueTester can display the keys used when NPCs talk in-game if we use a Harmony postfix." );
                 api.AddBoolOption(this.ModManifest,() => this.config.EnableHarmony, (bool val) => this.config.EnableHarmony = val, ()  => "Enable Harmony support.", () => "Will log dialogue keys to the console when used.","EnableHarmony");
                 api.AddBoolOption(this.ModManifest,() => this.config.IgnoreSelf, (bool val) => this.config.IgnoreSelf = val, ()  => "Ignore Dialogue Requested.", () => "Don't bother logging dialogue we have asked for.","IgnoreSelf");
 
@@ -158,10 +163,8 @@ namespace DialogueTester
             }
         }
 
-        private void PrintUsage(string error) {
-
+        private void PrintUsage(string command, string[] args) {
             //* Output to Debug Console
-            monitor.Log(error, LogLevel.Error);
             monitor.Log(_commandUsage, LogLevel.Info);
         }
 
@@ -177,7 +180,7 @@ namespace DialogueTester
 
             //* If we don't have the required amount of parameters, we quit.
             if (args.Length < 2 || args.Length > 3){
-                this.PrintUsage(_InvalidArguments);
+                monitor.Log(_InvalidArguments, LogLevel.Error);
                 return;
             }
 
@@ -195,7 +198,7 @@ namespace DialogueTester
 
             if (speakingNpc == null){
                 //* If the NPC doesn't exist, warn as appropriate and return.
-                this.PrintUsage(_InvalidNPC);
+                monitor.Log(_InvalidNPC, LogLevel.Error);
                 return;
             }
 
@@ -211,7 +214,7 @@ namespace DialogueTester
                 }
                 if (finalDialogue == null){
                     //* FAIL NOT FOUND
-                    this.PrintUsage(_InvalidDialogue);
+                    monitor.Log(_InvalidDialogue, LogLevel.Error);
                     return;
                 }
             }else{
@@ -226,7 +229,7 @@ namespace DialogueTester
                 }
                 if (finalDialogue == null){
                     //* FAIL NOT FOUND
-                    this.PrintUsage(_InvalidDialogue);
+                    monitor.Log(_InvalidDialogue, LogLevel.Error);
                     return;
                 }
             }
