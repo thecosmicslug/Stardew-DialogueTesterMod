@@ -240,7 +240,7 @@ namespace DialogueTester
             }
 
             //* Display Dialogue now!
-            Game1.DrawDialogue(new Dialogue(speakingNpc, null, finalDialogue));
+            Game1.DrawDialogue(new Dialogue(speakingNpc, dialogueIdOrKey, finalDialogue));
         }
     }
 }
